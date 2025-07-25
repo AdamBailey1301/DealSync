@@ -1,1 +1,3 @@
-# DealSync
+# DealSync MVP
+
+Instructions for running the app...
