@@ -1,4 +1,3 @@
-// pages/index.js
 import { useState, useEffect } from 'react';
 
 export default function Home() {
@@ -8,11 +7,11 @@ export default function Home() {
   const [contact, setContact] = useState('');
   const [email, setEmail] = useState('');
   const [note, setNote] = useState('');
+  const [priority, setPriority] = useState('Medium');
+  const [category, setCategory] = useState('');
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('All');
   const [sortType, setSortType] = useState('Newest');
-  const [editingId, setEditingId] = useState(null);
-  const [editFields, setEditFields] = useState({});
 
   useEffect(() => {
     const storedDeals = localStorage.getItem('deals');
@@ -34,6 +33,8 @@ export default function Home() {
       contact,
       email,
       note,
+      priority,
+      category,
       status: 'Pending',
     };
     setDeals([newDeal, ...deals]);
@@ -42,6 +43,8 @@ export default function Home() {
     setContact('');
     setEmail('');
     setNote('');
+    setPriority('Medium');
+    setCategory('');
   };
 
   const updateStatus = (id, newStatus) => {
@@ -62,42 +65,6 @@ export default function Home() {
     }
   };
 
-  const startEditing = (deal) => {
-    setEditingId(deal.id);
-    setEditFields({ ...deal });
-  };
-
-  const cancelEditing = () => {
-    setEditingId(null);
-    setEditFields({});
-  };
-
-  const saveEdit = () => {
-    setDeals(deals.map(deal => deal.id === editingId ? { ...editFields } : deal));
-    setEditingId(null);
-    setEditFields({});
-  };
-
-  const exportToCSV = () => {
-    const headers = ['Brand', 'Payment', 'Contact', 'Email', 'Note', 'Status'];
-    const rows = filteredDeals.map(deal => [
-      deal.brand,
-      deal.payment,
-      deal.contact,
-      deal.email,
-      deal.note,
-      deal.status
-    ]);
-    const csvContent = [headers, ...rows].map(row => row.map(field => `"${field}"`).join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `deals-export-${Date.now()}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
   const filteredDeals = deals
     .filter(deal =>
       (deal.brand.toLowerCase().includes(search.toLowerCase()) ||
@@ -114,11 +81,7 @@ export default function Home() {
   return (
     <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif', maxWidth: '800px', margin: '0 auto' }}>
       <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Welcome to DealSync</h1>
-      <p>This is the MVP of your micro-CRM for content creators.</p>
-
-      <button onClick={exportToCSV} style={{ marginBottom: '1rem', padding: '0.5rem', backgroundColor: '#059669', color: 'white', border: 'none', borderRadius: '4px' }}>
-        📤 Export CSV
-      </button>
+      <p>This is your micro-CRM for content creators.</p>
 
       <h2>Add New Deal</h2>
       <div style={{ display: 'grid', gap: '0.5rem', marginBottom: '1rem' }}>
@@ -127,6 +90,12 @@ export default function Home() {
         <input placeholder="Contact Name" value={contact} onChange={e => setContact(e.target.value)} />
         <input placeholder="Contact Email" value={email} onChange={e => setEmail(e.target.value)} />
         <textarea placeholder="Notes" value={note} onChange={e => setNote(e.target.value)} />
+        <input placeholder="Category" value={category} onChange={e => setCategory(e.target.value)} />
+        <select value={priority} onChange={e => setPriority(e.target.value)}>
+          <option>High</option>
+          <option>Medium</option>
+          <option>Low</option>
+        </select>
         <button onClick={addDeal} style={{ padding: '0.5rem', backgroundColor: '#4f46e5', color: 'white', border: 'none', borderRadius: '4px' }}>Add Deal</button>
       </div>
 
@@ -137,7 +106,7 @@ export default function Home() {
         onChange={e => setSearch(e.target.value)}
         style={{ width: '100%', marginBottom: '0.5rem' }}
       />
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
+      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
         <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
           <option value="All">All Statuses</option>
           <option value="Pending">Pending</option>
@@ -156,38 +125,25 @@ export default function Home() {
       {filteredDeals.length === 0 && <p>No matching deals found.</p>}
       {filteredDeals.map(deal => (
         <div key={deal.id} style={{ border: '1px solid #ccc', padding: '1rem', marginTop: '1rem', borderRadius: '8px' }}>
-          {editingId === deal.id ? (
-            <>
-              <input value={editFields.brand} onChange={e => setEditFields({ ...editFields, brand: e.target.value })} />
-              <input value={editFields.payment} onChange={e => setEditFields({ ...editFields, payment: e.target.value })} />
-              <input value={editFields.contact} onChange={e => setEditFields({ ...editFields, contact: e.target.value })} />
-              <input value={editFields.email} onChange={e => setEditFields({ ...editFields, email: e.target.value })} />
-              <textarea value={editFields.note} onChange={e => setEditFields({ ...editFields, note: e.target.value })} />
-              <select value={editFields.status} onChange={e => setEditFields({ ...editFields, status: e.target.value })}>
-                <option>Pending</option>
-                <option>Negotiating</option>
-                <option>Closed</option>
-                <option>Rejected</option>
-              </select>
-              <br />
-              <button onClick={saveEdit} style={{ marginTop: '0.5rem', color: 'green' }}>Save</button>
-              <button onClick={cancelEditing} style={{ marginTop: '0.5rem', marginLeft: '1rem' }}>Cancel</button>
-            </>
-          ) : (
-            <>
-              <p><strong>Brand:</strong> {deal.brand}</p>
-              <p><strong>Payment:</strong> £{deal.payment}</p>
-              <p><strong>Contact:</strong> {deal.contact}</p>
-              <p><strong>Email:</strong> {deal.email}</p>
-              <p><strong>Note:</strong> {deal.note}</p>
-              <p>
-                <strong>Status:</strong>
-                <span style={{ backgroundColor: getStatusColor(deal.status), color: 'white', padding: '0.2rem 0.5rem', borderRadius: '4px', marginLeft: '0.5rem' }}>{deal.status}</span>
-              </p>
-              <button onClick={() => startEditing(deal)}>✏️ Edit</button>
-              <button onClick={() => deleteDeal(deal.id)} style={{ marginLeft: '1rem', color: 'red' }}>Delete</button>
-            </>
-          )}
+          <p><strong>Brand:</strong> {deal.brand}</p>
+          <p><strong>Payment:</strong> £{deal.payment}</p>
+          <p><strong>Contact:</strong> {deal.contact}</p>
+          <p><strong>Email:</strong> {deal.email}</p>
+          <p><strong>Note:</strong> {deal.note}</p>
+          <p><strong>Category:</strong> {deal.category}</p>
+          <p><strong>Priority:</strong> {deal.priority}</p>
+          <p>
+            <strong>Status:</strong>
+            <span style={{ backgroundColor: getStatusColor(deal.status), color: 'white', padding: '0.2rem 0.5rem', borderRadius: '4px', marginLeft: '0.5rem' }}>{deal.status}</span>
+          </p>
+          <select value={deal.status} onChange={e => updateStatus(deal.id, e.target.value)}>
+            <option>Pending</option>
+            <option>Negotiating</option>
+            <option>Closed</option>
+            <option>Rejected</option>
+          </select>
+          <br />
+          <button onClick={() => deleteDeal(deal.id)} style={{ marginTop: '0.5rem', color: 'red' }}>Delete</button>
         </div>
       ))}
     </div>
